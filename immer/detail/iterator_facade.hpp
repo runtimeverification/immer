@@ -123,17 +123,10 @@ public:
         return access_t::equal(a, b);
     }
 
-    bool operator==(const DerivedT& rhs) const
+    friend bool operator!=(DerivedT const& a, DerivedT const& b)
     {
-        return access_t::equal(derived(), rhs);
+        return !access_t::equal(a, b);
     }
-
-#if __cplusplus < 202002L
-    bool operator!=(const DerivedT& rhs) const
-    {
-        return !access_t::equal(derived(), rhs);
-    }
-#endif
 
     DerivedT& operator++()
     {
