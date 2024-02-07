@@ -89,7 +89,8 @@ protected:
 
         reference_proxy(DerivedT iter)
             : iter_{std::move(iter)}
-        {}
+        {
+        }
 
     public:
         operator ReferenceT() const { return *iter_; }
@@ -121,10 +122,13 @@ public:
     {
         return access_t::equal(derived(), rhs);
     }
+
+#if __cplusplus < 202002L
     bool operator!=(const DerivedT& rhs) const
     {
         return !access_t::equal(derived(), rhs);
     }
+#endif
 
     DerivedT& operator++()
     {
