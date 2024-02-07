@@ -118,6 +118,11 @@ public:
         return derived() + n;
     }
 
+    friend bool operator==(DerivedT const& a, DerivedT const& b)
+    {
+        return access_t::equal(a, b);
+    }
+
     bool operator==(const DerivedT& rhs) const
     {
         return access_t::equal(derived(), rhs);
