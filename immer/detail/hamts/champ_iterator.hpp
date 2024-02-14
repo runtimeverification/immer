@@ -34,6 +34,7 @@ struct champ_iterator
 
     champ_iterator(const tree_t& v)
         : depth_{0}
+        , cur_off_{0}
     {
         if (v.root->datamap()) {
             cur_ = v.root->values();
@@ -49,6 +50,7 @@ struct champ_iterator
         : cur_{nullptr}
         , end_{nullptr}
         , depth_{0}
+        , cur_off_{0}
     {
         path_[0] = &v.root;
     }
@@ -57,6 +59,7 @@ struct champ_iterator
         : cur_{other.cur_}
         , end_{other.end_}
         , depth_{other.depth_}
+        , cur_off_{other.cur_off_}
     {
         std::copy(other.path_, other.path_ + depth_ + 1, path_);
     }
@@ -67,13 +70,18 @@ private:
     T* cur_;
     T* end_;
     count_t depth_;
+    count_t cur_off_;
     node_t* const* path_[max_depth<B> + 1] = {
+        0,
+    };
+    std::uint8_t path_off_[max_depth<B>] = {
         0,
     };
 
     void increment()
     {
         ++cur_;
+        ++cur_off_;
         ensure_valid_();
     }
 
@@ -84,17 +92,20 @@ private:
             assert(parent);
             if (parent->nodemap()) {
                 ++depth_;
-                path_[depth_] = parent->children();
-                auto child    = *path_[depth_];
+                path_[depth_]         = parent->children();
+                path_off_[depth_ - 1] = 0;
+                auto child            = *path_[depth_];
                 assert(child);
                 if (depth_ < max_depth<B>) {
                     if (child->datamap()) {
-                        cur_ = child->values();
-                        end_ = cur_ + child->data_count();
+                        cur_     = child->values();
+                        end_     = cur_ + child->data_count();
+                        cur_off_ = 0;
                     }
                 } else {
-                    cur_ = child->collisions();
-                    end_ = cur_ + child->collision_count();
+                    cur_     = child->collisions();
+                    end_     = cur_ + child->collision_count();
+                    cur_off_ = 0;
                 }
                 return true;
             }
@@ -110,16 +121,19 @@ private:
             auto next   = path_[depth_] + 1;
             if (next < last) {
                 path_[depth_] = next;
-                auto child    = *path_[depth_];
+                ++path_off_[depth_ - 1];
+                auto child = *path_[depth_];
                 assert(child);
                 if (depth_ < max_depth<B>) {
                     if (child->datamap()) {
-                        cur_ = child->values();
-                        end_ = cur_ + child->data_count();
+                        cur_     = child->values();
+                        end_     = cur_ + child->data_count();
+                        cur_off_ = 0;
                     }
                 } else {
-                    cur_ = child->collisions();
-                    end_ = cur_ + child->collision_count();
+                    cur_     = child->collisions();
+                    end_     = cur_ + child->collision_count();
+                    cur_off_ = 0;
                 }
                 return true;
             }
@@ -138,6 +152,7 @@ private:
                 // end of sequence
                 assert(depth_ == 0);
                 cur_ = end_ = nullptr;
+                cur_off_    = 0;
                 return;
             }
         }
