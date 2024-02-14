@@ -15,6 +15,7 @@
 #include <immer/refcount/no_refcount_policy.hpp>
 #include <immer/refcount/refcount_policy.hpp>
 #include <immer/refcount/unsafe_refcount_policy.hpp>
+#include <immer/relocation/no_relocation_policy.hpp>
 #include <immer/transience/gc_transience_policy.hpp>
 #include <immer/transience/no_transience_policy.hpp>
 #include <type_traits>
@@ -30,7 +31,8 @@ struct get_transience_policy
     : std::conditional<std::is_same<RefcountPolicy, no_refcount_policy>::value,
                        gc_transience_policy,
                        no_transience_policy>
-{};
+{
+};
 
 template <typename T>
 using get_transience_policy_t = typename get_transience_policy<T>::type;
@@ -44,7 +46,8 @@ struct get_prefer_fewer_bigger_objects
     : std::integral_constant<
           bool,
           std::is_same<HeapPolicy, heap_policy<cpp_heap>>::value>
-{};
+{
+};
 
 template <typename T>
 constexpr auto get_prefer_fewer_bigger_objects_v =
@@ -59,7 +62,8 @@ struct get_use_transient_rvalues
     : std::integral_constant<
           bool,
           !std::is_same<RefcountPolicy, no_refcount_policy>::value>
-{};
+{
+};
 
 template <typename T>
 constexpr auto get_use_transient_rvalues_v =
@@ -90,13 +94,15 @@ template <typename HeapPolicy,
           bool PreferFewerBiggerObjects =
               get_prefer_fewer_bigger_objects_v<HeapPolicy>,
           bool UseTransientRValues =
-              get_use_transient_rvalues_v<RefcountPolicy>>
+              get_use_transient_rvalues_v<RefcountPolicy>,
+          typename RelocationPolicy = no_relocation_policy>
 struct memory_policy
 {
     using heap       = HeapPolicy;
     using refcount   = RefcountPolicy;
     using transience = TransiencePolicy;
     using lock       = LockPolicy;
+    using relocation = RelocationPolicy;
 
     static constexpr bool prefer_fewer_bigger_objects =
         PreferFewerBiggerObjects;
