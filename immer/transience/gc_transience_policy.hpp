@@ -44,6 +44,7 @@ struct gc_transience_policy
                     : v{v_}
                 {}
                 edit() = delete;
+                edit(void *v_) : v(v_) {}
                 bool operator==(edit x) const { return v == x.v; }
                 bool operator!=(edit x) const { return v != x.v; }
             };
