@@ -49,24 +49,14 @@ struct rrbtree
 
     static node_t*& empty_root()
     {
-        static auto empty_ = [] {
-            constexpr auto size = node_t::sizeof_inner_n(0);
-            static std::aligned_storage_t<size, alignof(std::max_align_t)>
-                storage;
-            return node_t::make_inner_n_into(&storage, size, 0u);
-        }();
+        static auto empty_ = node_t::make_inner_n(0u);
         empty_->inc();
         return empty_;
     }
 
     static node_t*& empty_tail()
     {
-        static auto empty_ = [] {
-            constexpr auto size = node_t::sizeof_leaf_n(0);
-            static std::aligned_storage_t<size, alignof(std::max_align_t)>
-                storage;
-            return node_t::make_leaf_n_into(&storage, size, 0u);
-        }();
+        static auto empty_ = node_t::make_leaf_n(0u);
         empty_->inc();
         return empty_;
     }
