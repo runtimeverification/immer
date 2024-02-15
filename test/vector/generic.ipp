@@ -12,7 +12,7 @@
 #include <immer/algorithm.hpp>
 
 #include <boost/range/adaptors.hpp>
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <algorithm>
 #include <numeric>
@@ -24,6 +24,8 @@ using namespace std::string_literals;
 #ifndef VECTOR_T
 #error "define the vector template to use in VECTOR_T"
 #endif
+
+IMMER_RANGES_CHECK(std::ranges::random_access_range<VECTOR_T<int>>);
 
 template <typename V = VECTOR_T<unsigned>>
 auto make_test_vector(unsigned min, unsigned max)
@@ -113,9 +115,21 @@ TEST_CASE("at")
     CHECK(v.at(0) == 0);
     CHECK(v.at(5) == 5);
 #ifndef IMMER_NO_EXCEPTIONS
-    CHECK_THROWS_AS(v.at(10), const std::out_of_range&);
-    CHECK_THROWS_AS(v.at(11), const std::out_of_range&);
+    CHECK_THROWS_AS(v.at(10), std::out_of_range);
+    CHECK_THROWS_AS(v.at(11), std::out_of_range);
 #endif
+}
+
+TEST_CASE("random_access iteration")
+{
+    auto v    = VECTOR_T<int>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    auto iter = v.begin();
+    CHECK(*iter == 0);
+    CHECK(iter[0] == 0);
+    CHECK(iter[3] == 3);
+    CHECK(iter[9] == 9);
+    iter += 4;
+    CHECK(iter[-4] == 0);
 }
 
 TEST_CASE("push back one element")
@@ -127,6 +141,12 @@ TEST_CASE("push back one element")
         CHECK(v1.size() == 0u);
         CHECK(v2.size() == 1u);
         CHECK(v2[0] == 42);
+
+        // basic identity rules
+        auto v3 = v2;
+        CHECK(v1.identity() != v2.identity());
+        CHECK(v3.identity() == v2.identity());
+        CHECK(v1.identity() == VECTOR_T<int>{}.identity());
     }
 
     SECTION("many elements")
@@ -336,27 +356,27 @@ TEST_CASE("accumulate")
         using namespace std;
         {
             auto sum = immer::accumulate(begin(v) + 100, begin(v) + 300, 0u);
-            CHECK(sum == expected_i(100, 300));
+            CHECK(sum == expected_i(100u, 300u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 31, begin(v) + 300, 0u);
-            CHECK(sum == expected_i(31, 300));
+            CHECK(sum == expected_i(31u, 300u));
         }
         {
             auto sum = immer::accumulate(begin(v), begin(v) + 33, 0u);
-            CHECK(sum == expected_i(0, 33));
+            CHECK(sum == expected_i(0u, 33u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 100, begin(v) + 660, 0u);
-            CHECK(sum == expected_i(100, 660));
+            CHECK(sum == expected_i(100u, 660u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 100, begin(v) + 105, 0u);
-            CHECK(sum == expected_i(100, 105));
+            CHECK(sum == expected_i(100u, 105u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 660, begin(v) + 664, 0u);
-            CHECK(sum == expected_i(660, 664));
+            CHECK(sum == expected_i(660u, 664u));
         }
     }
 }
@@ -384,6 +404,9 @@ TEST_CASE("vector of strings")
 struct non_default
 {
     unsigned value;
+    non_default(unsigned value_)
+        : value{value_}
+    {}
     non_default() = delete;
     operator unsigned() const { return value; }
 
@@ -453,6 +476,22 @@ TEST_CASE("exception safety")
         IMMER_TRACE_E(d.happenings);
     }
 
+    SECTION("push back move")
+    {
+        auto v = dadaist_vector_t{};
+        auto d = dadaism{};
+        for (auto i = 0u; v.size() < static_cast<decltype(v.size())>(n);) {
+            auto s = d.next();
+            try {
+                v = std::move(v).push_back({i});
+                ++i;
+            } catch (dada_error) {}
+            CHECK_VECTOR_EQUALS(v, boost::irange(0u, i));
+        }
+        CHECK(d.happenings > 0);
+        IMMER_TRACE_E(d.happenings);
+    }
+
     SECTION("update")
     {
         auto v = make_test_vector<dadaist_vector_t>(0, n);
@@ -461,6 +500,24 @@ TEST_CASE("exception safety")
             auto s = d.next();
             try {
                 v = v.update(i, [](auto x) { return dada(), x + 1; });
+                ++i;
+            } catch (dada_error) {}
+            CHECK_VECTOR_EQUALS(
+                v, boost::join(boost::irange(1u, 1u + i), boost::irange(i, n)));
+        }
+        CHECK(d.happenings > 0);
+        IMMER_TRACE_E(d.happenings);
+    }
+
+    SECTION("update move")
+    {
+        auto v = make_test_vector<dadaist_vector_t>(0, n);
+        auto d = dadaism{};
+        for (auto i = 0u; i < n;) {
+            auto s = d.next();
+            try {
+                v = std::move(v).update(i,
+                                        [](auto x) { return dada(), x + 1; });
                 ++i;
             } catch (dada_error) {}
             CHECK_VECTOR_EQUALS(
@@ -482,6 +539,25 @@ TEST_CASE("exception safety")
                 CHECK_VECTOR_EQUALS(r, boost::irange(0u, i++));
             } catch (dada_error) {
                 CHECK_VECTOR_EQUALS(r, boost::irange(0u, 0u));
+            }
+        }
+        CHECK(d.happenings > 0);
+        IMMER_TRACE_E(d.happenings);
+    }
+
+    SECTION("take move")
+    {
+        auto v = make_test_vector<dadaist_vector_t>(0, n);
+        auto d = dadaism{};
+        auto r = dadaist_vector_t{v};
+        for (auto i = 0u; i < n - 1;) {
+            auto s = d.next();
+            try {
+                r = std::move(r).take(n - i - 1);
+                CHECK_VECTOR_EQUALS(r, boost::irange(0u, n - i - 1));
+                ++i;
+            } catch (dada_error) {
+                CHECK_VECTOR_EQUALS(r, boost::irange(0u, n - i));
             }
         }
         CHECK(d.happenings > 0);

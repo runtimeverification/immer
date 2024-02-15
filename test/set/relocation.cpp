@@ -6,7 +6,7 @@
 // See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 #include <immer/set.hpp>
 
 using relocation_memory = immer::memory_policy<immer::default_heap_policy,

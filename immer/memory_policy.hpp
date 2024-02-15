@@ -30,7 +30,8 @@ struct get_transience_policy
     : std::conditional<std::is_same<RefcountPolicy, no_refcount_policy>::value,
                        gc_transience_policy,
                        no_transience_policy>
-{};
+{
+};
 
 template <typename T>
 using get_transience_policy_t = typename get_transience_policy<T>::type;
@@ -44,7 +45,8 @@ struct get_prefer_fewer_bigger_objects
     : std::integral_constant<
           bool,
           std::is_same<HeapPolicy, heap_policy<cpp_heap>>::value>
-{};
+{
+};
 
 template <typename T>
 constexpr auto get_prefer_fewer_bigger_objects_v =
@@ -59,7 +61,8 @@ struct get_use_transient_rvalues
     : std::integral_constant<
           bool,
           !std::is_same<RefcountPolicy, no_refcount_policy>::value>
-{};
+{
+};
 
 template <typename T>
 constexpr auto get_use_transient_rvalues_v =

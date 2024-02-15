@@ -14,7 +14,7 @@
 
 #include <boost/range/adaptors.hpp>
 #include <boost/range/irange.hpp>
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <algorithm>
 #include <array>
@@ -28,6 +28,9 @@
 #ifndef VECTOR_T
 #error "define the vector template to use in VECTOR_T"
 #endif
+
+IMMER_RANGES_CHECK(
+    std::ranges::random_access_range<FLEX_VECTOR_T<std::string>>);
 
 template <typename V = FLEX_VECTOR_T<unsigned>>
 auto make_test_flex_vector(unsigned min, unsigned max)
@@ -104,6 +107,18 @@ TEST_CASE("push_front")
         for (decltype(v.size()) j = 0; j < v.size(); ++j)
             CHECK(v[v.size() - j - 1] == j);
     }
+}
+
+TEST_CASE("random_access iteration")
+{
+    auto v    = make_test_flex_vector(0, 10);
+    auto iter = v.begin();
+    CHECK(*iter == 0);
+    CHECK(iter[0] == 0);
+    CHECK(iter[3] == 3);
+    CHECK(iter[9] == 9);
+    iter += 4;
+    CHECK(iter[-4] == 0);
 }
 
 TEST_CASE("concat")
@@ -260,27 +275,27 @@ TEST_CASE("accumulate relaxed")
         auto v       = make_test_flex_vector_front(0, n);
         {
             auto sum = immer::accumulate(begin(v) + 100, begin(v) + 300, 0u);
-            CHECK(sum == expected_i(100, 300));
+            CHECK(sum == expected_i(100u, 300u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 31, begin(v) + 300, 0u);
-            CHECK(sum == expected_i(31, 300));
+            CHECK(sum == expected_i(31u, 300u));
         }
         {
             auto sum = immer::accumulate(begin(v), begin(v) + 33, 0u);
-            CHECK(sum == expected_i(0, 33));
+            CHECK(sum == expected_i(0u, 33u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 100, begin(v) + 660, 0u);
-            CHECK(sum == expected_i(100, 660));
+            CHECK(sum == expected_i(100u, 660u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 100, begin(v) + 105, 0u);
-            CHECK(sum == expected_i(100, 105));
+            CHECK(sum == expected_i(100u, 105u));
         }
         {
             auto sum = immer::accumulate(begin(v) + 660, begin(v) + 664, 0u);
-            CHECK(sum == expected_i(660, 664));
+            CHECK(sum == expected_i(660u, 664u));
         }
     }
 }
