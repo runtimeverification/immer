@@ -47,24 +47,18 @@ struct rrbtree
                ipow((size_t{1} << B) - 2, (S - BL) / B);
     }
 
-    static node_t* empty_root()
+    static node_t*& empty_root()
     {
-        static const auto empty_ = []{
-            constexpr auto size = node_t::sizeof_inner_n(0);
-            static std::aligned_storage_t<size, alignof(std::max_align_t)> storage;
-            return node_t::make_inner_n_into(&storage, size, 0u);
-        }();
-        return empty_->inc();
+        static auto empty_ = node_t::make_inner_n(0u);
+        empty_->inc();
+        return empty_;
     }
 
-    static node_t* empty_tail()
+    static node_t*& empty_tail()
     {
-        static const auto empty_ = []{
-            constexpr auto size = node_t::sizeof_leaf_n(0);
-            static std::aligned_storage_t<size, alignof(std::max_align_t)> storage;
-            return node_t::make_leaf_n_into(&storage, size, 0u);
-        }();
-        return empty_->inc();
+        static auto empty_ = node_t::make_leaf_n(0u);
+        empty_->inc();
+        return empty_;
     }
 
     template <typename U>
@@ -900,9 +894,9 @@ struct rrbtree
                                              r.shift,
                                              r.tail_offset());
                 l               = {l.size + r.size,
-                     concated.shift(),
-                     concated.node(),
-                     r.tail->inc()};
+                                   concated.shift(),
+                                   concated.node(),
+                                   r.tail->inc()};
             }
         }
     }
@@ -961,9 +955,9 @@ struct rrbtree
                                                     add_tail,
                                                     branches<BL>);
                         r             = {l.size + r.size,
-                             get<0>(new_root),
-                             get<1>(new_root),
-                             new_tail};
+                                         get<0>(new_root),
+                                         get<1>(new_root),
+                                         new_tail};
                         return;
                     }
                     IMMER_CATCH (...) {
@@ -1041,9 +1035,9 @@ struct rrbtree
                                              r.shift,
                                              r.tail_offset());
                 r               = {l.size + r.size,
-                     concated.shift(),
-                     concated.node(),
-                     r.tail->inc()};
+                                   concated.shift(),
+                                   concated.node(),
+                                   r.tail->inc()};
                 return;
             }
         }
@@ -1177,9 +1171,9 @@ struct rrbtree
                                              r.shift,
                                              r.tail_offset());
                 l               = {l.size + r.size,
-                     concated.shift(),
-                     concated.node(),
-                     r.tail->inc()};
+                                   concated.shift(),
+                                   concated.node(),
+                                   r.tail->inc()};
                 return;
             }
         }
@@ -1238,9 +1232,9 @@ struct rrbtree
                                                     add_tail,
                                                     branches<BL>);
                         r             = {l.size + r.size,
-                             get<0>(new_root),
-                             get<1>(new_root),
-                             new_tail};
+                                         get<0>(new_root),
+                                         get<1>(new_root),
+                                         new_tail};
                         return;
                     }
                     IMMER_CATCH (...) {
@@ -1321,9 +1315,9 @@ struct rrbtree
                                              r.shift,
                                              r.tail_offset());
                 r               = {l.size + r.size,
-                     concated.shift(),
-                     concated.node(),
-                     r.tail->inc()};
+                                   concated.shift(),
+                                   concated.node(),
+                                   r.tail->inc()};
             }
         }
     }

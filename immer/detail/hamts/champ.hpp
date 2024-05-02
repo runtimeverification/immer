@@ -137,16 +137,18 @@ struct champ
     node_t* root;
     size_t size;
 
-    static node_t* empty()
+    static node_t*& empty()
     {
-        static const auto node = node_t::make_inner_n(0);
-        return node->inc();
+        static auto node = node_t::make_inner_n(0);
+        node->inc();
+        return node;
     }
 
     champ(node_t* r, size_t sz = 0)
         : root{r}
         , size{sz}
-    {}
+    {
+    }
 
     champ(const champ& other)
         : champ{other.root, other.size}
@@ -1300,13 +1302,15 @@ struct champ
             , data{a.data}
             , owned{false}
             , mutated{false}
-        {}
+        {
+        }
         sub_result_mut(sub_result a, bool m)
             : kind{a.kind}
             , data{a.data}
             , owned{false}
             , mutated{m}
-        {}
+        {
+        }
         sub_result_mut()
             : kind{kind_t::nothing}
             , mutated{false} {};
